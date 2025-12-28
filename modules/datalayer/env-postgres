@@ -1,0 +1,2 @@
+# link to postgres by postgres protocol via asukaNet to container postresAsuka name
+DATABASE_URL=postgresql://postgres:password@pg-obj-det:5432/postgres

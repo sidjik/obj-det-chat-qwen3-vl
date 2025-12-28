@@ -1,0 +1,6 @@
+mypy
+fastapi[standard]
+requests
+ollama
+numpy
+pillow
