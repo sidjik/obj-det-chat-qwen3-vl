@@ -25,5 +25,5 @@ RUN pip install -r requirements.in
 #RUN pip install -r requirements.txt
 
 
-CMD ["python3", "-m", "fastapi", "dev", "--host", "0.0.0.0", "ollama_adapter/api.py"]
+CMD ["python3", "-m", "fastapi", "dev", "--host", "0.0.0.0", "--port", "80", "ollama_adapter/api.py"]
 
