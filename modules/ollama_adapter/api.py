@@ -159,3 +159,22 @@ def stream_image_answer_by_imageanswer_with_url(query: ImageAnswer, model: str |
         model=model or DEFAULT_OLLAMA_IMG_MODEL
     ), media_type='text')
 
+
+
+
+
+
+
+
+
+# --- TOOLS ---
+class ModelsInfo(BaseModel):
+    name: str
+    vision_model: bool
+    desc: str
+@app.get('/ollama/available_models')
+def get_available_models() -> list[ModelsInfo]:
+    return [
+        ModelsInfo(**m) for m in ollama_provider.get_available_models()
+    ]
+# -------------

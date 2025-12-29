@@ -1,0 +1,5 @@
+VisionModels:
+  - "qwen3-vl"
+
+AcceptedModels:
+  - "qwen3-vl"

@@ -13,6 +13,7 @@ import requests
 from io import BytesIO
 import numpy as np
 from rich.panel import Panel
+import yaml
 
 
 
@@ -198,12 +199,41 @@ def make_conv_with_rich(console, model: str = "gemma3:12b") -> None:
 
     
 
+def get_available_models() -> list[dict[str, str | bool]]:
+    models_names: list[str] = controller.available_models()
+    with open((Path(__file__) / '..' / '..').resolve() / 'vision_models.yaml','r') as f:
+        models_config = yaml.safe_load(f)
+    labels: list[dict[str, str | bool]] = [] # vision or not, 'description'
+    for name in models_names:
+        familly: str = name.split(':')[0]
+        if familly not in models_config['AcceptedModels']:
+            continue
 
+        if familly in models_config['VisionModels']:
+            labels.append({
+                'vision_model': True,
+                'desc': "\n *Visual llm*, can load image!"
+            })
+
+        else:
+            labels.append({
+                'vision_model': False,
+                'desc': ""
+            })
+
+        labels[-1]['desc'] = f"The underlying LLM model is **{name}**.{labels[-1]['desc']}"
+        labels[-1]['name'] = name
+
+    return labels
 
 
 
 if __name__ == "__main__":
 
+    from rich.pretty import pprint
+    
+    pprint(get_available_models())
+    exit()
 
     # -- testing stream call --
     for i in stream_answer(Answer(query='hello'), model='llama3.2:1b'):

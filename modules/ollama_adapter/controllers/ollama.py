@@ -131,61 +131,83 @@ def tool_calling(messages: list[dict[str, str]], tools: dict[str, Callable], mod
 
 
 
+# --- return available models list ---
+def available_models() -> list[str]:
+    return [
+        m['model'] for m in ollama.list()['models']
+    ] 
+# ------------------------------------
 
-if __name__ == "__main__":
-    def add(a: int, b: int) -> int:
-      """Add two numbers"""
-      """
-      Args:
-        a: The first number
-        b: The second number
-
-      Returns:
-        The sum of the two numbers
-      """
-      return a + b
-
-
-    def multiply(a: int, b: int) -> int:
-      """Multiply two numbers"""
-      """
-      Args:
-        a: The first number
-        b: The second number
-
-      Returns:
-        The product of the two numbers
-      """
-      return a * b
 
 
 
-    available_functions = {
-      'add': add,
-      'multiply': multiply,
-    }
+if __name__ == "__main__":
+    from rich.console import Console
+    from rich.pretty import pprint
+
+    models = available_models()
+    pprint(models)
 
 
-    messages = [{'role': 'user', 'content': 'What is (11434+12341)*412?'}]
-    tool_result = tool_calling(messages, tools=available_functions, model="gpt-oss:20b-cloud", options=None)
-    print(tool_result)
-
-    class Result(BaseModel):
-        result: int = Field(..., description="Result for user query.")
 
 
-    print(Result.model_json_schema())
-    prompt = f"""
-    Answer: {messages[-1]['content']}
-
-    Ensure the output conforms strictly to the JSON format provided.
-    If a field is not present, omit it (do not return null).
-    Only return the JSON, do not include any markdown or other text.
-
-    Json Schema:
-    {Result.model_json_schema()}
-    """
-
-    print(json_answer([{'role': 'user', 'content': prompt}], format=Result, model="gpt-oss:20b-cloud", options=None))
 
 
+
+
+#    def add(a: int, b: int) -> int:
+#      """Add two numbers"""
+#      """
+#      Args:
+#        a: The first number
+#        b: The second number
+#
+#      Returns:
+#        The sum of the two numbers
+#      """
+#      return a + b
+#
+#
+#    def multiply(a: int, b: int) -> int:
+#      """Multiply two numbers"""
+#      """
+#      Args:
+#        a: The first number
+#        b: The second number
+#
+#      Returns:
+#        The product of the two numbers
+#      """
+#      return a * b
+#
+#
+#
+#    available_functions = {
+#      'add': add,
+#      'multiply': multiply,
+#    }
+#
+#
+#    messages = [{'role': 'user', 'content': 'What is (11434+12341)*412?'}]
+#    tool_result = tool_calling(messages, tools=available_functions, model="gpt-oss:20b-cloud", options=None)
+#    print(tool_result)
+#
+#    class Result(BaseModel):
+#        result: int = Field(..., description="Result for user query.")
+#
+#
+#    print(Result.model_json_schema())
+#    prompt = f"""
+#    Answer: {messages[-1]['content']}
+#
+#    Ensure the output conforms strictly to the JSON format provided.
+#    If a field is not present, omit it (do not return null).
+#    Only return the JSON, do not include any markdown or other text.
+#
+#    Json Schema:
+#    {Result.model_json_schema()}
+#    """
+#
+#    print(json_answer([{'role': 'user', 'content': prompt}], format=Result, model="gpt-oss:20b-cloud", options=None))
+#
+#

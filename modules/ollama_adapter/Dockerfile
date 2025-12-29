@@ -10,6 +10,7 @@ COPY models/ ./ollama_adapter/models/.
 COPY views/ ./ollama_adapter/views/.
 COPY api.py ./ollama_adapter/.
 COPY __init__.py ./ollama_adapter/.
+COPY vision_models.yaml ./ollama_adapter/vision_models.yaml
 
 COPY ../__init__.py ./.
 
