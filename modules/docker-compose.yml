@@ -1,0 +1,108 @@
+services:
+  # --- data layer ---
+  #
+  # --- PG database ---
+  obj-det-pg:
+    image: postgres:15.12-bookworm
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    networks:
+      - obj-det-net
+    volumes:
+      - obj-det-pg:/var/lib/postgresql/data
+
+  # --- PG migration service ---
+  obj-det-pg-migrate:
+    build: datalayer/.
+    depends_on:
+      - obj-det-pg
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@obj-det-pg:5432/postgres
+    networks:
+      - obj-det-net
+    command: >
+      sh -c "npm install prisma@6.4.1 --save --global && prisma migrate deploy"
+  # ----------------------------
+
+  # -------------------
+  #
+  # --- S3 storage ---
+  obj-det-s3:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+    networks:
+      obj-det-net:
+        ipv4_address: 172.20.0.10
+    volumes:
+      - obj-det-s3:/var/lib/localstack
+      - ./datalayer/localstack-script.sh:/etc/localstack/init/ready.d/script.sh
+      - ./var/run/docker.sock:/var/run/docker.sock
+
+  # ------------------
+  #
+  # ------------------
+ 
+  # --- chainlit web-app ---
+  obj-det-chainlit:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@obj-det-pg:5432/postgres
+      - BUCKET_NAME=my-bucket
+      - APP_AWS_ACCESS_KEY=random-key
+      - APP_AWS_SECRET_KEY=random-key
+      - APP_AWS_REGION=eu-central-1
+      - DEV_AWS_ENDPOINT=http://localhost.localstack.cloud:4566
+
+    dns:
+     - 172.20.0.10
+    networks:
+      obj-det-net:
+        ipv4_address: 172.20.0.20
+
+    
+  # ------------------------
+
+  # --- ollama-adapter ---
+  ollama-adapter:
+    build: ollama_adapter/.
+    ports:
+      - "8000:80"
+    environment:
+      - OLLAMA_HOST=http://host.docker.internal:11434
+    networks:
+      - obj-det-net
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  # ----------------------
+
+
+  # --- ollama image ---
+  # --------------------
+
+
+
+
+
+
+networks:
+  obj-det-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+volumes:
+  obj-det-datalayer:
+  obj-det-pg:
+  obj-det-s3:
+  obj-det-chainlit:
+  # ollama_cont:
+  

@@ -21,9 +21,14 @@ RUN pip install -r requirements.txt --root-user-action ignore
 # copy project file
 COPY ./app.py .
 COPY ./OllamaModel.py .
-#COPY ./env-chainlit ./.env
 
-RUN echo "DATABASE_URL=postgresql://postgres:password@pg-obj-det:5432/postgres" > ./.env
+#RUN echo "DATABASE_URL=postgresql://postgres:password@pg-obj-det:5432/postgres" > ./.env
+#RUN echo "BUCKET_NAME=my-bucket" >> ./.env
+#RUN echo "APP_AWS_ACCESS_KEY=random-key" >> ./.env
+#RUN echo "APP_AWS_SECRET_KEY=random-key" >> ./.env
+#RUN echo "APP_AWS_REGION=eu-central-1" >> ./.env
+#RUN echo "DEV_AWS_ENDPOINT=http://localhost.localstack.cloud:4566" >> ./.env
+
 RUN python -m chainlit create-secret | grep 'CHAINLIT_AUTH_SECRET' >> ./.env
 
 
