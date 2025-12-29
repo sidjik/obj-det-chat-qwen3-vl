@@ -9,17 +9,22 @@ from pathlib import Path
 def annotate(image_data: Path | bytes, xyxy: list[tuple[int, int, int, int]], labels: list[str]) -> np.ndarray:
     
     if isinstance(image_data, Path):
-        image: np.ndarray = cv2.imread(image_data)
+        image: np.ndarray = np.array(
+                cv2.imread(str(image_data))
+        )
     elif isinstance(image_data, bytes):
-        image: np.ndarray = cv2.imdecode(
-            np.frombuffer(image_data, np.uint8),
-            cv2.IMREAD_COLOR
+        image: np.ndarray = np.array(
+            cv2.imdecode(
+                np.frombuffer(image_data, np.uint8),
+                cv2.IMREAD_COLOR
+            )
         )
     else:
         raise TypeError(f"Invalid type, expecting Path or bytes, got: {type(image_data)}")
 
 
-    class_id_vocab: dict[str, int] = { labels[i]: i for i in range(len(set(labels)))}
+    unique_labels: list[str] = list(set(labels))
+    class_id_vocab: dict[str, int] = { unique_labels[i]: i for i in range(len(unique_labels))}
 
     detections = sv.Detections(
         xyxy=np.array([ list(i) for i in xyxy ]),

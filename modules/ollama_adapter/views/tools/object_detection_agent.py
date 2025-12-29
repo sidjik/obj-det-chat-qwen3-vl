@@ -11,7 +11,7 @@ class ObjEntity(BaseModel):
     coordinates: tuple[int, int, int, int]
     label: str
 
-# --- generate coordinates for object ---
+# --- generate coordinates for image request---
 def generate_coordinates(query: ImageAnswer, model: str = "qwen3-vl:30b") -> list[ObjEntity]:
 
     class ListPlug(BaseModel):
@@ -30,6 +30,7 @@ def generate_coordinates(query: ImageAnswer, model: str = "qwen3-vl:30b") -> lis
             "# Instructions",
             "1. Make labels name clear and simple.",
             "2. Identical labels names means the same class.",
+            "3. You can provide different names for different entity."
             "",
         ])
     }]
@@ -61,11 +62,13 @@ if __name__ == "__main__":
 
     #with open(Path("~/Desktop/gotou2.jpg").expanduser(), 'rb') as f: 
     with open(Path("~/Desktop/football_field.jpg").expanduser(), 'rb') as f: 
+    #with open(Path("~/Desktop/suricatas.jpeg").expanduser(), 'rb') as f: 
         img_b = f.read()
 
     answer = ImageAnswer(
         #query = "Provide three bounding boxes of anime character head and both arms in JSON format.",
-        query = "Provide bounding boxes for all football player in red t-shirts.",
+        query = "Provide bounding boxes for all football player of each team and prvodie for them separate labels.",
+        #query = "Provide bounding boxes for all suricates that you see on screen, make box only with head for each one.",
         paths = [img_b]
     )
     with console.status("Generate coordinates..."):
