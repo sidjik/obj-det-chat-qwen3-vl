@@ -54,6 +54,7 @@ services:
     ports:
       - "8080:80"
     environment:
+      - OLLAMA_ADAPTER_HOST=http://ollama-adapter
       - DATABASE_URL=postgresql://postgres:password@obj-det-pg:5432/postgres
       - BUCKET_NAME=my-bucket
       - APP_AWS_ACCESS_KEY=random-key

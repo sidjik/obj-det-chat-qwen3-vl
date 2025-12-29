@@ -2,3 +2,4 @@ chainlit
 ollama==0.4.7
 asyncpg
 boto3
+requests

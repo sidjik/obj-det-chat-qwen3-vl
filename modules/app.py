@@ -3,7 +3,11 @@ from chainlit.input_widget import Select, Switch, Slider, Tags, TextInput
 from OllamaModel import *
 import os 
 import ollama
+import requests
+import codecs
 
+
+OLLAMA_ADAPTER_HOST: str = os.environ.get("OLLAMA_ADAPTER_HOST", "http://localhost:8000")
 
 
 
@@ -30,9 +34,12 @@ async def get_async_response(message):
 
 @cl.on_message
 async def main(message):
+    msg = cl.Message(content="")
     try:
-        model = cl.user_session.get('model')
+        model_name = cl.user_session.get('model')
+
         if len(message.elements): 
+            # --- image answer ---
             if any(i in model.name for i in vision_model):
                
                 # i don`t know how it works :), because i can`t run vision model localy on my pc :(
@@ -43,18 +50,42 @@ async def main(message):
                 answer = model.get_response_with_image(message.content, paths)
             else: 
                 answer = get_async_response('This model does not support image to text compatibility')
+            # --------------------
         else: 
-            answer = model.get_response(message.content)
+            
+            with requests.post(
+                url=f"{OLLAMA_ADAPTER_HOST}/ollama/text/answer/stream?model={model_name}", 
+                json={
+                    'query': {
+                        'query': message.content
+                    }
+                },
+                stream=True
+            ) as token_stream:
 
-        msg = cl.Message(content="")
-        async for token in answer:
-            await msg.stream_token(str(token))
+                decoder = codecs.getincrementaldecoder("utf-8")()
+
+                for chunk in token_stream.iter_content(chunk_size=3):
+                    if not chunk:
+                        continue
+
+                    text = decoder.decode(chunk)
+                    if text:
+                        await msg.stream_token(text)
+
+                tail = decoder.decode(b"", final=True)
+                if tail:
+                    await msg.stream_token(tail)
+
+            #async for token in token_stream:
+                #await msg.stream_token(str(token))
 
         await msg.send()
 
     except Exception as e: 
         msg = cl.Message(content='Something went wrong: {}'.format(e))
         await msg.send()
+        raise e
 
 
 
@@ -63,15 +94,16 @@ from chainlit.types import ThreadDict
 
 @cl.on_chat_resume
 async def on_chat_resume(thread: ThreadDict):
-    model = OllamaModel(thread['metadata']['chat_profile'])
-    for step in thread['steps']:
-        print(step['name'], step['output'])
-        if step['name'].lower() == 'assistant':
-            name = 'assistant'
-        else: 
-            name = 'user'
-        model.append_message(name, step['output'])
-    cl.user_session.set('model', model)
+    #for step in thread['steps']:
+    #    print(step['name'], step['output'])
+    #    if step['name'].lower() == 'assistant':
+    #        name = 'assistant'
+    #    else: 
+    #        name = 'user'
+    #    model.append_message(name, step['output'])
+
+    model_name = thread['metadata']['chat_profile']
+    cl.user_session.set('model', model_name)
 
 
 
@@ -110,9 +142,10 @@ async def start():
 
         ]
         ).send()
+
+    cl.user_session.set('model', model_name)
     
-    model_name = ''.join([model_name, ':latest']) if ':' not in model_name else model_name
-    cl.user_session.set('model', OllamaModel(model_name))
+    
 
 
 
@@ -126,32 +159,36 @@ async def start():
 async def setup_agent(settings):
     cl.user_session.set('settings', settings)
 
-    
 
 
-import random
+
+
 
 @cl.set_chat_profiles
 async def chat_profile():
-    models = list()
-    client = ollama.Client(host='ollama:11434')
-    for i in client.list()['models']: 
-        name = i['model']
-        print("name", name)
-        name = name.replace(':latest', '') if ':latest' in name else name
-        markdown_description = "The underlying LLM model is **{}**.".format(name)
-        if any([i in name for i in vision_model]): 
-            markdown_description += "\n *Visual llm*, can load image!"
-        models.append(
-        cl.ChatProfile(name=name, markdown_description=markdown_description, icon='https://images.seeklogo.com/logo-png/59/1/ollama-logo-png_seeklogo-593420.png')
-        )
-    return models
+    chainlit_list: list[cl.ChatProfile] = []
+    # --- get available models ---
+    models = requests.get(
+        url = f"{OLLAMA_ADAPTER_HOST}/ollama/available_models"
+    ).json()
+    for model in models:
+        chainlit_list.append(cl.ChatProfile(
+            name = model['name'],
+            markdown_description = model['desc'],
+            icon='https://images.seeklogo.com/logo-png/59/1/ollama-logo-png_seeklogo-593420.png'
+        ))
+    # ----------------------------
+    return chainlit_list 
+
+
+    
 
 
 
 
 @cl.set_starters
 async def set_starters():
+    # !!! change this shit
     return [
         cl.Starter(
             label="Morning routine ideation",
