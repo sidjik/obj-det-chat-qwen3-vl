@@ -4,6 +4,9 @@ from ...models.ollama import OllamaOptions
 from pydantic import BaseModel
 from pathlib import Path
 import numpy as np
+import logging
+
+log = logging.getLogger("rich")
 
 
 
@@ -13,6 +16,8 @@ class ObjEntity(BaseModel):
 
 # --- generate coordinates for image request---
 def generate_coordinates(query: ImageAnswer, model: str = "qwen3-vl:30b") -> list[ObjEntity]:
+
+    log.info("Start generating coordinates")
 
     class ListPlug(BaseModel):
         result: list[ObjEntity]
@@ -34,6 +39,7 @@ def generate_coordinates(query: ImageAnswer, model: str = "qwen3-vl:30b") -> lis
             "",
         ])
     }]
+    log.info(f"Query: {query.query}")
     
     coordinates: list[ObjEntity] = provider.json_output(
         query =  JSONFormat(
@@ -42,11 +48,13 @@ def generate_coordinates(query: ImageAnswer, model: str = "qwen3-vl:30b") -> lis
         ),
         model = model,
         options = OllamaOptions(
-            top_p = 0.9,
-            top_k = 30,
             temperature = 0
-        )
+        ),
+        #cloud=True
     ).output.result
+
+
+    log.info("Finish generating coordinates")
     
     return coordinates
 # ---------------------------------------
@@ -61,14 +69,15 @@ if __name__ == "__main__":
     console = Console()
 
     #with open(Path("~/Desktop/gotou2.jpg").expanduser(), 'rb') as f: 
-    with open(Path("~/Desktop/football_field.jpg").expanduser(), 'rb') as f: 
-    #with open(Path("~/Desktop/suricatas.jpeg").expanduser(), 'rb') as f: 
+    #with open(Path("~/Desktop/football_field.jpg").expanduser(), 'rb') as f: 
+    with open(Path("~/Desktop/suricatas.jpeg").expanduser(), 'rb') as f: 
         img_b = f.read()
 
     answer = ImageAnswer(
         #query = "Provide three bounding boxes of anime character head and both arms in JSON format.",
-        query = "Provide bounding boxes for all football player of each team and prvodie for them separate labels.",
+        #query = "Provide bounding boxes for all football player of each team and prvodie for them separate labels.",
         #query = "Provide bounding boxes for all suricates that you see on screen, make box only with head for each one.",
+        query = "provide bouding boxes of suricatas heads",
         paths = [img_b]
     )
     with console.status("Generate coordinates..."):

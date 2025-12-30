@@ -21,11 +21,17 @@ def image_router(query: Answer, model="qwen3-vl:30b") -> int:
             "# Instructions",
             " ".join([
                 "1. Choose route *1*, if user specify",
-                "that we need **only** generate bounding boxing for image",
+                "that we need **only** generate bounding boxing for image,",
+                "it means if user want **only** bounding box/boxes",
+                "we choose this route - *1*. We decide choose this route",
+                "if user strongly type *bounding box/es* in request."
             ]),
             " ".join([
                 "2. Choose route *2*, if create bounding boxes to addition",
-                "for answer will be usefull, maybe user search something on image."
+                "for answer will be usefull, maybe user search something on image.",
+                "We choose only this route if user strong type in request",
+                "that he can not find something and ask you to show, or",
+                "if user request contain request for text answer and bounding box"
             ]),
             " ".join([
                 "3. Choose route *0*, if another conditions",
@@ -45,7 +51,8 @@ def image_router(query: Answer, model="qwen3-vl:30b") -> int:
             format = ImageRoute
         ),
         model = model,
-        options = OllamaOptions(temperature=0)
+        options = OllamaOptions(temperature=0),
+        #cloud=True
     ).output.route
 
     return route

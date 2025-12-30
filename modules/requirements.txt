@@ -3,3 +3,7 @@ ollama==0.4.7
 asyncpg
 boto3
 requests
+opencv-python
+supervision
+pillow
+rich

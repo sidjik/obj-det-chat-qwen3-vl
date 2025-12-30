@@ -1,4 +1,4 @@
-FROM python:3.12.12-alpine AS python
+FROM python:3.12.12-bookworm
 
 WORKDIR /app
 
@@ -12,6 +12,8 @@ RUN ls
 RUN . ./env/bin/activate 
 
 
+RUN apt update && apt upgrade -y && apt install -y libgl1 libglib2.0-0
+
 # setup reqs
 COPY requirements.txt .
 RUN pip install -U pip --root-user-action ignore
@@ -21,6 +23,8 @@ RUN pip install -r requirements.txt --root-user-action ignore
 # copy project file
 COPY ./app.py .
 COPY ./OllamaModel.py .
+
+COPY ./ollama_adapter/views/tools/bounding_box.py ./ollama_adapter/views/tools/bounding_box.py
 
 #RUN echo "DATABASE_URL=postgresql://postgres:password@pg-obj-det:5432/postgres" > ./.env
 #RUN echo "BUCKET_NAME=my-bucket" >> ./.env

@@ -6,15 +6,34 @@ from fastapi.responses import StreamingResponse
 from .views import ollama as ollama_provider
 from .models.Answer import *
 from .models.ollama import OllamaOptions
+from .views.agentic import image_pipeline as obj_det_agent 
 import json
+import logging
+from rich.logging import RichHandler
+
+
 
 app = FastAPI(
     title="LLM Providers",
 )
 
+logging.basicConfig(
+    level="INFO",
+    format="%(message)s",
+    datefmt="[%X]",
+    handlers=[RichHandler(rich_tracebacks=True)]
+)
+
+
+
+
+
 DEFAULT_OLLAMA_MODEL:str = os.environ.get('DEFAULT_OLLAMA_MODEL', 'llama3.2:1b')
 DEFAULT_OLLAMA_EMB_MODEL: str = os.environ.get('DEFAULT_OLLAMA_EMB_MODEL', 'all-minilm:22m')
 DEFAULT_OLLAMA_IMG_MODEL: str = os.environ.get('DEFAULT_OLLAMA_IMG_MODEL', 'moondream:1.8b')
+
+DEFAULT_OLLAMA_OPTIONS: OllamaOptions = OllamaOptions(temperature=0)
+
 
 # --- TEXT ENDPOINTS --- 
 
@@ -162,6 +181,19 @@ def stream_image_answer_by_imageanswer_with_url(query: ImageAnswer, model: str |
 
 
 
+# --- process image pipeline ---
+@app.post('/ollama/image/obj-det-pipeline', tags=['obj-det-pipeline'])
+def obj_det_pipeline(query: ImageAnswer, model: str | None = None, options: OllamaOptions | None = None):
+    return StreamingResponse(( 
+        json.dumps(x) + "\n" for x in obj_det_agent.image_pipeline(
+            query=query,
+            model = model or DEFAULT_OLLAMA_IMG_MODEL,
+            options = options or DEFAULT_OLLAMA_OPTIONS
+        )
+    ), media_type='application/x-ndjson')
+
+# ------------------------------
+
 
 
 
@@ -172,7 +204,7 @@ class ModelsInfo(BaseModel):
     name: str
     vision_model: bool
     desc: str
-@app.get('/ollama/available_models')
+@app.get('/ollama/available_models', tags=["ollama-system"])
 def get_available_models() -> list[ModelsInfo]:
     return [
         ModelsInfo(**m) for m in ollama_provider.get_available_models()

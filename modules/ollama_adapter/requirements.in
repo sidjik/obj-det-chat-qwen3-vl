@@ -5,3 +5,5 @@ ollama
 numpy
 pillow
 pyyaml
+logging
+rich

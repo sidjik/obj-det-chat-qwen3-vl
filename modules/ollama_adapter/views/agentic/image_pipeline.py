@@ -12,7 +12,7 @@ from ..tools import object_detection_agent as bb_agent
 
 
 # --- pipeline for process image request ---
-def image_pipeline(query: ImageAnswer, model: str = "qwen3-vl:30b"):
+def image_pipeline(query: ImageAnswer, options: OllamaOptions, model: str = "qwen3-vl:30b"):
     pass
     # --- router --- 
     route: int = router(
@@ -27,7 +27,7 @@ def image_pipeline(query: ImageAnswer, model: str = "qwen3-vl:30b"):
         coor = bb_agent.generate_coordinates(
             query=query
         )
-        yield {"type": "coordinates", "data": coor}
+        yield {"type": "coordinates", "data": [ _.model_dump() for _ in coor ]}
         # -----------------------------
     elif route == 2:
         pass
@@ -63,7 +63,7 @@ def image_pipeline(query: ImageAnswer, model: str = "qwen3-vl:30b"):
                 **query.model_dump(), "query": f"Search entity: {search_entity}"
             })
         )
-        yield {"type": "coordinates", "data": coor}
+        yield {"type": "coordinates", "data": [ _.model_dump() for _ in coor ]}
 
         for token in provider.stream_answer(
             query = ImageAnswer(**{
@@ -135,6 +135,7 @@ if __name__ == "__main__":
         for data in image_pipeline(
             query = answer,
             model = "qwen3-vl:30b",
+            options = OllamaOptions(temperature=0)
         ):
             if data["type"] == "define-route" or data["type"] == "search-entity":
                 pprint(data['data'])

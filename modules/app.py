@@ -5,7 +5,28 @@ import os
 import ollama
 import requests
 import codecs
+from pathlib import Path
+import requests
+import base64
+import codecs
+import supervision as sv
+import json
+from ollama_adapter.views.tools.bounding_box import * 
+from PIL import Image
+import io
+import logging
+from rich.logging import RichHandler
 
+logging.basicConfig(
+    level="INFO",
+    format="%(message)s",
+    datefmt="[%X]",
+    handlers=[RichHandler(rich_tracebacks=True)]
+)
+
+
+
+log = logging.getLogger("rich")
 
 OLLAMA_ADAPTER_HOST: str = os.environ.get("OLLAMA_ADAPTER_HOST", "http://localhost:8000")
 
@@ -33,23 +54,110 @@ async def get_async_response(message):
 
 
 @cl.on_message
-async def main(message):
-    msg = cl.Message(content="")
+async def main(message: cl.Message):
+    msg: cl.Message = cl.Message(content="")
+
+    models_info = cl.user_session.get('models_info')
+    model_name = cl.user_session.get('model')
+
+    vision_model: bool = any([ _['name'] == model_name and _['vision_model'] for _ in models_info])
+    elements: list[cl.Image] = []
     try:
-        model_name = cl.user_session.get('model')
 
         if len(message.elements): 
             # --- image answer ---
-            if any(i in model.name for i in vision_model):
-               
-                # i don`t know how it works :), because i can`t run vision model localy on my pc :(
-                paths = list()
-                for element in message.elements: 
-                    os.system('docker cp {} /.'.format(element.path))
-                    paths.append('/{}'.format(element.path))
-                answer = model.get_response_with_image(message.content, paths)
+            if vision_model:
+
+                images_bytes: list[bytes] = []
+                images_bytes_decode: list = []
+                for element in message.elements:
+                    with open(element.path, "rb") as f:
+                        img_b = f.read()
+                        b64 = base64.b64encode(img_b).decode("ascii")
+                        images_bytes += [img_b]
+                        images_bytes_decode += [b64]
+
+
+
+                with requests.post(
+                    url=f"{OLLAMA_ADAPTER_HOST}/ollama/image/obj-det-pipeline", 
+                    json={
+                        'query': {
+                            'query': message.content,
+                            'paths': images_bytes_decode
+                        }
+                    },
+                    stream=True
+                ) as r:
+
+                    r.raise_for_status()
+                    for line in r.iter_lines(decode_unicode=True):
+                        if not line: continue
+
+                        data = json.loads(line)
+
+                        #if data["type"] == "define-route" or data["type"] == "search-entity":
+                        #    await msg.stream_token(f"Route/Search-entity: {data['data']}")
+
+                        if data["type"] == "define-route":
+                            async with cl.Step(name="Image Routing") as step:
+                                step.output = f"Route: {data['data']}\n"
+                                if data['data'] == 1:
+                                    step.output += "\n".join([
+                                        "Agent provide to you only image with bounding box that define."
+                                    ])
+                                elif data['data'] == 2:
+                                    step.output += "\n".join([
+                                        "Agent at first search entity on image and we search his on image.",
+                                        "After that final output will be generated.",
+                                        "Also for user agent provide picture with bounding object."
+                                    ])
+                                else:
+                                    step.output += "\n".join([
+                                        "Agent process image and answer on user question."
+                                    ])
+
+
+
+                        elif data["type"] == "search-entity":
+                            async with cl.Step(name="Find entity") as step:
+                                step.output = f"Generated search entity: {data['data']}\n" + "\n".join([
+                                    "This entity will be provided for agent that search entity on image"
+                                ])
+
+
+                        
+                        elif data['type'] == 'coordinates':
+                            coor = data["data"]
+                            async with cl.Step(name="Bounding objects coordinates") as step:
+                            #await msg.stream_token(f"Coordinates: {data["data"]}")
+                                coordinates = [ ent['coordinates'] for ent in coor ]
+                                labels = [ ent['label'] for ent in coor ]
+                                abs_coors = normalize_coordinates(coordinates, Image.open(io.BytesIO(images_bytes[0])).size)
+                                step.input(str({'coor': abs_coors, 'labels': labels}))
+                            #await msg.stream_token(str(abs_coors))
+
+                            img: np.ndarray = annotate(images_bytes[0], abs_coors, labels)
+                            elements.append(cl.Image(
+                                name = "image1.jpg",
+                                display = "inline",
+                                content = cv2.imencode('.jpg', img)[-1].tobytes()
+                            ))
+                            
+                            #await msg.stream_token(f"Image type: {type(img)}")
+
+                            
+
+                        elif data["type"] == "text-token":
+                            await msg.stream_token(str(data['data']))
+
+
+
             else: 
                 answer = get_async_response('This model does not support image to text compatibility')
+
+
+            
             # --------------------
         else: 
             
@@ -79,9 +187,12 @@ async def main(message):
 
             #async for token in token_stream:
                 #await msg.stream_token(str(token))
-
+        
         await msg.send()
-
+        if len(elements): await cl.Message(
+            content="This message has an image!",
+            elements=elements,
+        ).send()
     except Exception as e: 
         msg = cl.Message(content='Something went wrong: {}'.format(e))
         await msg.send()
@@ -145,6 +256,10 @@ async def start():
 
     cl.user_session.set('model', model_name)
     
+    models = requests.get(
+        url = f"{OLLAMA_ADAPTER_HOST}/ollama/available_models"
+    ).json()
+    cl.user_session.set('models_info', models)
     
 
 

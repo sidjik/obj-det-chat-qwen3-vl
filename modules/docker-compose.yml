@@ -36,13 +36,14 @@ services:
       - "4566:4566"
     environment:
       - SERVICES=s3
+      - PERSISTENCE=1
     networks:
       obj-det-net:
         ipv4_address: 172.20.0.10
     volumes:
-      - obj-det-s3:/var/lib/localstack
+      - obj-det-s3-vol:/var/lib/localstack
       - ./datalayer/localstack-script.sh:/etc/localstack/init/ready.d/script.sh
-      - ./var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock
 
   # ------------------
   #
@@ -78,6 +79,7 @@ services:
       - "8000:80"
     environment:
       - OLLAMA_HOST=http://host.docker.internal:11434
+      - DEFAULT_OLLAMA_IMG_MODEL=qwen3-vl:30b
     networks:
       - obj-det-net
     extra_hosts:
@@ -103,7 +105,7 @@ networks:
 volumes:
   obj-det-datalayer:
   obj-det-pg:
-  obj-det-s3:
+  obj-det-s3-vol:
   obj-det-chainlit:
   # ollama_cont:
   
