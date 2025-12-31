@@ -51,7 +51,14 @@ def image_router(query: Answer, model="qwen3-vl:30b") -> int:
             format = ImageRoute
         ),
         model = model,
-        options = OllamaOptions(temperature=0),
+        options = OllamaOptions(
+            temperature=0.12,
+            typical_p=0.7,
+            top_k=9, 
+            mirostat=2,
+            repeat_penalty=0.3,
+            repeat_last_n=-1
+        ),
         #cloud=True
     ).output.route
 
