@@ -48,7 +48,13 @@ def generate_coordinates(query: ImageAnswer, model: str = "qwen3-vl:30b") -> lis
         ),
         model = model,
         options = OllamaOptions(
-            temperature = 0
+            seed=42,
+            typical_p=0.9,
+            top_k=3, 
+            temperature=0.3,
+            mirostat=2,
+            repeat_penalty=0.3,
+            repeat_last_n=-1
         ),
         #cloud=True
     ).output.result

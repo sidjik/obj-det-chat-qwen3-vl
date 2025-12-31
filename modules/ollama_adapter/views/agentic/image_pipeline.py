@@ -25,7 +25,8 @@ def image_pipeline(query: ImageAnswer, options: OllamaOptions, model: str = "qwe
     if route == 1:
         # --- bounding box generate ---
         coor = bb_agent.generate_coordinates(
-            query=query
+            query=query,
+            model=model,
         )
         yield {"type": "coordinates", "data": [ _.model_dump() for _ in coor ]}
         # -----------------------------
@@ -51,7 +52,11 @@ def image_pipeline(query: ImageAnswer, options: OllamaOptions, model: str = "qwe
                 ]),
             }),
             model = model,
-            options = OllamaOptions(temperature=0)
+            options = OllamaOptions(
+                num_predict=12000,
+                temperature=0,
+                mirostat=2
+            )
         ).answer 
         if search_entity is None:
             raise ValueError("Search Entity is None")
@@ -61,7 +66,8 @@ def image_pipeline(query: ImageAnswer, options: OllamaOptions, model: str = "qwe
         coor = bb_agent.generate_coordinates(
             query=ImageAnswer(**{
                 **query.model_dump(), "query": f"Search entity: {search_entity}"
-            })
+            }),
+            model=model,
         )
         yield {"type": "coordinates", "data": [ _.model_dump() for _ in coor ]}
 
