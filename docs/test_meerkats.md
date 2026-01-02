@@ -11,7 +11,7 @@ Here we decided to test the image with meerkats, a fairly simple task. You can s
 ![meerkat detected heads](https://github.com/sidjik/obj-det-chat-qwen3-vl/blob/master/docs/images/test_meerkats/meerkats_head.jpg)
 
 #### Chat-example
-![chat meerkats heads 1](https://github.com/sidjik/obj-det-chat-qwen3-vl/blob/master/docs/images/test_meerkats/chat_heads.jpeg)
+![chat meerkats heads 1](https://github.com/sidjik/obj-det-chat-qwen3-vl/blob/master/docs/images/test_meerkats/chat_heads.png)
 
 
 
@@ -24,5 +24,5 @@ Here we decided to test the image with meerkats, a fairly simple task. You can s
 ![meerkats paws](https://github.com/sidjik/obj-det-chat-qwen3-vl/blob/master/docs/images/test_meerkats/meerkats_paw.jpeg)
 
 #### Chat-example
-![chat meerkats paws 1](https://github.com/sidjik/obj-det-chat-qwen3-vl/blob/master/docs/images/test_meerkats/chat_paw_1.jpeg)
-![chat meerkats paws 2](https://github.com/sidjik/obj-det-chat-qwen3-vl/blob/master/docs/images/test_meerkats/chat_paw_2.jpeg)
+![chat meerkats paws 1](https://github.com/sidjik/obj-det-chat-qwen3-vl/blob/master/docs/images/test_meerkats/chat_paw_1.png)
+![chat meerkats paws 2](https://github.com/sidjik/obj-det-chat-qwen3-vl/blob/master/docs/images/test_meerkats/chat_paw_2.png)
